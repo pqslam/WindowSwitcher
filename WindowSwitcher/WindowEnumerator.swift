@@ -15,11 +15,16 @@ struct WindowInfo {
 
 class WindowEnumerator {
     static func enumerateWindows() -> [WindowInfo] {
+        NSLog("🔍 WindowEnumerator called")
+        let trusted = AXIsProcessTrusted()
+        NSLog("🔒 AXIsProcessTrusted: \(trusted)")
+        
         var windows: [WindowInfo] = []
         
         let runningApps = NSWorkspace.shared.runningApplications.filter {
             $0.activationPolicy == .regular
         }
+        NSLog("📱 Found \(runningApps.count) apps")
         
         for app in runningApps {
             guard let appName = app.localizedName, let appIcon = app.icon else {
@@ -27,6 +32,7 @@ class WindowEnumerator {
             }
             
             let pid = app.processIdentifier
+            NSLog("  → \(appName)")
             let appElement = AXUIElementCreateApplication(pid)
             
             var windowsValue: CFTypeRef?
@@ -36,10 +42,14 @@ class WindowEnumerator {
                 &windowsValue
             )
             
+            NSLog("    AXResult: \(result.rawValue)")
+            
             guard result == .success,
                   let windowArray = windowsValue as? [AXUIElement] else {
                 continue
             }
+            
+            NSLog("    Windows: \(windowArray.count)")
             
             for axWindow in windowArray {
                 var titleValue: CFTypeRef?
@@ -66,6 +76,7 @@ class WindowEnumerator {
             }
         }
         
+        NSLog("✅ Total: \(windows.count) windows")
         return windows
     }
 }
